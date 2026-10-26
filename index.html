@@ -1,0 +1,770 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Netplix - Streaming Film & Serial TV</title>
+  
+  <!-- PWA & Mobile Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#050505">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #050505;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #222;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #E50914;
+    }
+
+    /* Splash Screen Animation Tajam */
+    @keyframes netflixIntro {
+      0% { transform: scale(0.6); opacity: 0; }
+      50% { transform: scale(1.08); opacity: 1; }
+      80% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(1.2); opacity: 0; }
+    }
+    .animate-intro {
+      animation: netflixIntro 2.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      will-change: transform, opacity;
+      -webkit-font-smoothing: antialiased;
+      backface-visibility: hidden;
+    }
+
+    /* Hero Fade Transition */
+    .hero-fade {
+      transition: opacity 0.5s ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-[#050505] text-gray-100 font-sans antialiased min-h-screen flex flex-col justify-between selection:bg-red-600 selection:text-white">
+
+  <!-- Splash Screen Intro Ala Netflix -->
+  <div id="splashScreen" class="fixed inset-0 z-[100] bg-black flex flex-col items-center justify-center transition-opacity duration-500">
+    <h1 class="text-[#E50914] font-black text-5xl md:text-7xl tracking-widest animate-intro drop-shadow-[0_0_20px_rgba(229,9,20,0.7)]">
+      NETPLIX
+    </h1>
+  </div>
+
+  <!-- Sidebar Overlay -->
+  <div id="sidebarOverlay" onclick="closeSidebar()" class="fixed inset-0 bg-black/75 z-[55] hidden backdrop-blur-sm transition-opacity duration-300"></div>
+
+  <!-- Sidebar Drawer -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 w-72 bg-[#0c0c0c] z-[60] transform -translate-x-full transition-transform duration-300 ease-in-out border-r border-neutral-800/80 p-5 flex flex-col justify-between shadow-2xl">
+    <div>
+      <!-- Sidebar Header -->
+      <div class="flex items-center justify-between pb-6 border-b border-neutral-800">
+        <h2 class="text-[#E50914] font-black text-2xl tracking-wider">NETPLIX</h2>
+        <button onclick="closeSidebar()" class="text-gray-400 hover:text-white p-1 transition">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+
+      <!-- Mode Selector (Film vs TV) -->
+      <div class="mt-4 p-1 bg-[#161616] rounded-lg flex text-xs font-bold border border-neutral-800">
+        <button id="sidebarTabMovie" onclick="setMediaType('movie'); closeSidebar();" class="flex-1 py-2 rounded-md bg-[#E50914] text-white transition text-center">Film</button>
+        <button id="sidebarTabTv" onclick="setMediaType('tv'); closeSidebar();" class="flex-1 py-2 rounded-md text-gray-400 hover:text-white transition text-center">Serial TV</button>
+      </div>
+
+      <!-- Menu Navigasi -->
+      <div class="mt-6 space-y-1">
+        <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2 px-3">Menu Utama</p>
+        <button onclick="loadInitialData(); closeSidebar();" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-neutral-800/60 hover:text-white transition">
+          <i class="fa-solid fa-house w-5 text-[#E50914]"></i><span>Beranda</span>
+        </button>
+        <button onclick="loadCategory('popular'); closeSidebar();" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-neutral-800/60 hover:text-white transition">
+          <i class="fa-solid fa-fire w-5 text-orange-500"></i><span>Popular</span>
+        </button>
+        <button onclick="loadCategory('top_rated'); closeSidebar();" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-neutral-800/60 hover:text-white transition">
+          <i class="fa-solid fa-star w-5 text-yellow-400"></i><span>Rating Tertinggi</span>
+        </button>
+        <button onclick="filterMyList(); closeSidebar();" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-neutral-800/60 hover:text-white transition">
+          <div class="flex items-center space-x-3">
+            <i class="fa-solid fa-bookmark w-5 text-red-500"></i><span>Daftar Saya</span>
+          </div>
+          <span id="myListBadge" class="bg-[#E50914] text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+        </button>
+        <button onclick="showHistory(); closeSidebar();" class="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-neutral-800/60 hover:text-white transition">
+          <i class="fa-solid fa-clock-rotate-left w-5 text-blue-500"></i><span>Terakhir Dilihat</span>
+        </button>
+      </div>
+
+      <!-- Filter Section -->
+      <div class="mt-6 space-y-3 pt-4 border-t border-neutral-800">
+        <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wider px-1">Filter & Urutkan</p>
+        
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Genre</label>
+          <select id="genreSelect" onchange="applySidebarFilters()" class="w-full bg-[#161616] text-xs text-gray-200 border border-neutral-800 rounded-lg p-2 focus:outline-none focus:border-[#E50914]">
+            <option value="">Semua Genre</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Tahun Rilis</label>
+          <select id="yearSelect" onchange="applySidebarFilters()" class="w-full bg-[#161616] text-xs text-gray-200 border border-neutral-800 rounded-lg p-2 focus:outline-none focus:border-[#E50914]">
+            <option value="">Semua Tahun</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-xs text-gray-400 mb-1 block">Urutkan</label>
+          <select id="sortSelect" onchange="applySidebarFilters()" class="w-full bg-[#161616] text-xs text-gray-200 border border-neutral-800 rounded-lg p-2 focus:outline-none focus:border-[#E50914]">
+            <option value="popularity.desc">Paling Populer</option>
+            <option value="vote_average.desc">Rating Tertinggi</option>
+            <option value="primary_release_date.desc">Rilis Terbaru</option>
+          </select>
+        </div>
+
+        <button onclick="resetFilters(); closeSidebar();" class="w-full text-xs text-gray-400 hover:text-[#E50914] transition py-2 border border-neutral-800 rounded-lg flex items-center justify-center gap-2 mt-2">
+          <i class="fa-solid fa-rotate-right text-[10px]"></i> Reset Filter
+        </button>
+      </div>
+    </div>
+
+    <div class="pt-4 border-t border-neutral-800 text-center text-[10px] text-neutral-600">
+      <p>Netplix v3.0 • Full Featured App</p>
+    </div>
+  </aside>
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/95 via-black/80 to-transparent p-4 md:px-12 flex items-center justify-between backdrop-blur-md border-b border-white/5">
+    <div class="flex items-center space-x-4">
+      <button onclick="openSidebar()" class="text-white hover:text-[#E50914] p-1.5 transition rounded-lg hover:bg-neutral-800/50">
+        <i class="fa-solid fa-bars text-xl"></i>
+      </button>
+      <h1 class="text-[#E50914] font-black text-2xl md:text-3xl tracking-wider cursor-pointer hover:scale-105 transition duration-200" onclick="loadInitialData()">NETPLIX</h1>
+      
+      <!-- Top Media Switcher (Desktop) -->
+      <div class="hidden md:flex space-x-2 bg-neutral-900/80 p-1 rounded-full border border-neutral-800 text-xs font-bold ml-4">
+        <button id="navTabMovie" onclick="setMediaType('movie')" class="px-4 py-1 rounded-full bg-[#E50914] text-white transition">Film</button>
+        <button id="navTabTv" onclick="setMediaType('tv')" class="px-4 py-1 rounded-full text-gray-400 hover:text-white transition">Serial TV</button>
+      </div>
+    </div>
+    
+    <div class="flex items-center space-x-3">
+      <div class="relative">
+        <input type="text" id="searchInput" placeholder="Cari..." class="bg-black/80 border border-neutral-800 text-sm text-white rounded-full py-1.5 px-4 pl-9 focus:outline-none focus:border-[#E50914] focus:ring-1 focus:ring-[#E50914] w-36 sm:w-60 transition-all">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-gray-400"></i>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="pt-16 pb-12 flex-grow">
+    <!-- Hero Banner Carousel -->
+    <div id="heroBanner" class="relative w-full h-[55vh] md:h-[70vh] bg-cover bg-center flex items-end p-6 md:p-12 mb-8 hidden transition-all duration-700">
+      <div class="absolute inset-0 bg-gradient-to-t from-[#050505] via-[#050505]/50 to-black/30"></div>
+      <div class="absolute inset-0 bg-gradient-to-r from-[#050505]/95 via-[#050505]/40 to-transparent"></div>
+      
+      <div id="heroContent" class="relative z-10 max-w-2xl hero-fade">
+        <span id="heroBadge" class="bg-[#E50914] text-white text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-sm mb-3 inline-block shadow-lg">Rekomendasi Hari Ini</span>
+        <h2 id="heroTitle" class="text-3xl md:text-6xl font-black mb-3 text-white drop-shadow-xl leading-tight"></h2>
+        <p id="heroOverview" class="text-xs md:text-sm text-gray-300 line-clamp-3 mb-6 drop-shadow leading-relaxed"></p>
+        <div class="flex space-x-3">
+          <button id="heroPlayBtn" class="bg-white text-black font-bold px-5 py-2.5 rounded flex items-center space-x-2 hover:bg-gray-200 transition text-sm shadow-xl active:scale-95">
+            <i class="fa-solid fa-play text-base"></i><span>Putar Trailer</span>
+          </button>
+          <button id="heroAddBtn" class="bg-neutral-800/90 text-white font-semibold px-5 py-2.5 rounded flex items-center space-x-2 hover:bg-neutral-700 transition text-sm backdrop-blur-md border border-white/10 active:scale-95">
+            <i class="fa-solid fa-plus text-base"></i><span>Daftar Saya</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="heroIndicators" class="absolute bottom-4 right-6 md:right-12 z-20 flex space-x-1.5"></div>
+    </div>
+
+    <!-- Section Title -->
+    <div class="px-4 md:px-12 mb-4">
+      <h2 id="sectionTitle" class="text-lg md:text-2xl font-bold border-l-4 border-[#E50914] pl-3">Trending Sekarang</h2>
+    </div>
+
+    <!-- Movie Grid -->
+    <div class="px-4 md:px-12">
+      <div id="movieGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+      
+      <!-- Load More Button -->
+      <div id="loadMoreContainer" class="mt-10 text-center hidden">
+        <button onclick="loadMore()" class="bg-neutral-900 hover:bg-[#E50914] text-white font-bold px-6 py-2.5 rounded-full border border-neutral-800 transition shadow-lg text-xs md:text-sm active:scale-95">
+          <i class="fa-solid fa-arrows-rotate mr-2"></i>Muat Lebih Banyak
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-neutral-900 py-6 text-center text-xs text-neutral-600">
+    <p>&copy; 2026 Netplix. Powered by TMDB API.</p>
+  </footer>
+
+  <!-- Modal Detail & Trailer -->
+  <div id="movieModal" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 hidden backdrop-blur-md">
+    <div class="bg-[#111] rounded-xl overflow-hidden max-w-3xl w-full relative shadow-2xl border border-neutral-800 max-h-[92vh] flex flex-col">
+      <button onclick="closeModal()" class="absolute top-3 right-3 text-white bg-black/70 rounded-full w-8 h-8 flex items-center justify-center hover:bg-[#E50914] transition z-10">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      
+      <div id="modalVideoContainer" class="relative w-full aspect-video bg-black"></div>
+
+      <div class="p-6 overflow-y-auto space-y-5">
+        <div>
+          <div class="flex justify-between items-start mb-2">
+            <h3 id="modalTitle" class="text-xl md:text-2xl font-bold text-white"></h3>
+            <span id="modalRating" class="bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 text-xs px-2.5 py-1 rounded-md font-bold"></span>
+          </div>
+          <p id="modalMeta" class="text-xs text-neutral-400 mb-3"></p>
+          <p id="modalOverview" class="text-xs md:text-sm text-gray-300 leading-relaxed"></p>
+        </div>
+
+        <div class="flex space-x-3">
+          <button id="modalAddBtn" class="bg-[#E50914] hover:bg-red-700 text-white text-xs md:text-sm font-bold px-4 py-2.5 rounded-md flex items-center space-x-2 transition shadow-md active:scale-95">
+            <i class="fa-solid fa-plus"></i><span id="modalAddText">Tambah ke Daftar Saya</span>
+          </button>
+        </div>
+
+        <!-- Cast Section -->
+        <div id="modalCastSection" class="pt-2 border-t border-neutral-800/80">
+          <h4 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Pemeran Utama</h4>
+          <div id="modalCastGrid" class="flex space-x-3 overflow-x-auto pb-2 scrollbar-none"></div>
+        </div>
+
+        <!-- Similar Content Section -->
+        <div id="modalSimilarSection" class="pt-2 border-t border-neutral-800/80">
+          <h4 id="similarTitle" class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Konten Serupa</h4>
+          <div id="modalSimilarGrid" class="grid grid-cols-3 sm:grid-cols-6 gap-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    const API_KEY = '6ca992326ef4e11b2c6ef618898cd7b7';
+    const BASE_URL = 'https://api.themoviedb.org/3';
+    const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
+    const HERO_IMAGE_URL = 'https://image.tmdb.org/t/p/original';
+
+    let mediaType = 'movie';
+    let currentPage = 1;
+    let currentFilterType = 'trending';
+    let currentQuery = '';
+    let currentMovies = [];
+    
+    let myList = JSON.parse(localStorage.getItem('netplix_mylist')) || [];
+    let watchHistory = JSON.parse(localStorage.getItem('netplix_history')) || [];
+    
+    let heroCarouselList = [];
+    let heroCurrentIndex = 0;
+    let heroInterval = null;
+
+    const movieGrid = document.getElementById('movieGrid');
+    const genreSelect = document.getElementById('genreSelect');
+    const yearSelect = document.getElementById('yearSelect');
+    const sortSelect = document.getElementById('sortSelect');
+    const searchInput = document.getElementById('searchInput');
+    const sectionTitle = document.getElementById('sectionTitle');
+    const movieModal = document.getElementById('movieModal');
+    const loadMoreContainer = document.getElementById('loadMoreContainer');
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const splash = document.getElementById('splashScreen');
+        if (splash) {
+          splash.style.opacity = '0';
+          setTimeout(() => splash.style.display = 'none', 500);
+        }
+      }, 2000);
+
+      populateYearDropdown();
+      fetchGenres();
+      loadInitialData();
+      updateMyListBadge();
+
+      let searchTimeout;
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          const query = e.target.value.trim();
+          if (query.length > 0) {
+            searchMovies(query);
+          } else {
+            loadInitialData();
+          }
+        }, 400);
+      });
+    });
+
+    function setMediaType(type) {
+      mediaType = type;
+      currentPage = 1;
+      
+      const isMovie = type === 'movie';
+      document.getElementById('navTabMovie').className = `px-4 py-1 rounded-full transition ${isMovie ? 'bg-[#E50914] text-white' : 'text-gray-400 hover:text-white'}`;
+      document.getElementById('navTabTv').className = `px-4 py-1 rounded-full transition ${!isMovie ? 'bg-[#E50914] text-white' : 'text-gray-400 hover:text-white'}`;
+      document.getElementById('sidebarTabMovie').className = `flex-1 py-2 rounded-md transition text-center ${isMovie ? 'bg-[#E50914] text-white' : 'text-gray-400 hover:text-white'}`;
+      document.getElementById('sidebarTabTv').className = `flex-1 py-2 rounded-md transition text-center ${!isMovie ? 'bg-[#E50914] text-white' : 'text-gray-400 hover:text-white'}`;
+
+      fetchGenres();
+      loadInitialData();
+    }
+
+    function openSidebar() {
+      document.getElementById('sidebar').classList.remove('-translate-x-full');
+      document.getElementById('sidebarOverlay').classList.remove('hidden');
+    }
+
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.add('-translate-x-full');
+      document.getElementById('sidebarOverlay').classList.add('hidden');
+    }
+
+    function updateMyListBadge() {
+      document.getElementById('myListBadge').textContent = myList.length;
+    }
+
+    function populateYearDropdown() {
+      yearSelect.innerHTML = '<option value="">Semua Tahun</option>';
+      const currentYear = new Date().getFullYear();
+      for (let year = currentYear; year >= 1990; year--) {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+      }
+    }
+
+    async function fetchGenres() {
+      try {
+        genreSelect.innerHTML = '<option value="">Semua Genre</option>';
+        const res = await fetch(`${BASE_URL}/genre/${mediaType}/list?api_key=${API_KEY}&language=id-ID`);
+        const data = await res.json();
+        if (data.genres) {
+          data.genres.forEach(genre => {
+            const option = document.createElement('option');
+            option.value = genre.id;
+            option.textContent = genre.name;
+            genreSelect.appendChild(option);
+          });
+        }
+      } catch (err) {
+        console.error('Gagal mengambil genre:', err);
+      }
+    }
+
+    async function loadInitialData() {
+      currentPage = 1;
+      currentFilterType = 'trending';
+      sectionTitle.textContent = mediaType === 'movie' ? 'Film Trending' : 'Serial TV Trending';
+      genreSelect.value = '';
+      yearSelect.value = '';
+      sortSelect.value = 'popularity.desc';
+      searchInput.value = '';
+      
+      try {
+        showLoading();
+        const res = await fetch(`${BASE_URL}/trending/${mediaType}/week?api_key=${API_KEY}&language=id-ID&page=1`);
+        const data = await res.json();
+        currentMovies = data.results || [];
+        
+        if (currentMovies.length > 0) {
+          heroCarouselList = currentMovies.filter(m => m.backdrop_path).slice(0, 5);
+          startHeroCarousel();
+        }
+        renderMovies(currentMovies);
+        loadMoreContainer.classList.remove('hidden');
+      } catch (err) {
+        movieGrid.innerHTML = `<p class="col-span-full text-center text-red-500 py-10">Gagal memuat data. Periksa koneksi internet kamu.</p>`;
+      }
+    }
+
+    async function loadCategory(category) {
+      currentPage = 1;
+      currentFilterType = 'category';
+      currentQuery = category;
+      showLoading();
+      document.getElementById('heroBanner').classList.add('hidden');
+      
+      const isMovie = mediaType === 'movie';
+      if (category === 'popular') {
+        sectionTitle.textContent = isMovie ? 'Film Popular' : 'Serial TV Popular';
+      } else if (category === 'top_rated') {
+        sectionTitle.textContent = isMovie ? 'Film Rating Tertinggi' : 'Serial TV Rating Tertinggi';
+      }
+
+      try {
+        const res = await fetch(`${BASE_URL}/${mediaType}/${category}?api_key=${API_KEY}&language=id-ID&page=1`);
+        const data = await res.json();
+        currentMovies = data.results || [];
+        renderMovies(currentMovies);
+        loadMoreContainer.classList.remove('hidden');
+      } catch (err) {
+        console.error('Gagal memuat kategori:', err);
+      }
+    }
+
+    async function applySidebarFilters() {
+      currentPage = 1;
+      currentFilterType = 'discover';
+      const selectedGenre = genreSelect.value;
+      const selectedYear = yearSelect.value;
+      const selectedSort = sortSelect.value;
+
+      sectionTitle.textContent = 'Hasil Filter & Urutan';
+      showLoading();
+      document.getElementById('heroBanner').classList.add('hidden');
+
+      let url = `${BASE_URL}/discover/${mediaType}?api_key=${API_KEY}&language=id-ID&sort_by=${selectedSort}&page=1`;
+      if (selectedGenre) url += `&with_genres=${selectedGenre}`;
+      if (selectedYear) {
+        url += mediaType === 'movie' ? `&primary_release_year=${selectedYear}` : `&first_air_date_year=${selectedYear}`;
+      }
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        currentMovies = data.results || [];
+        renderMovies(currentMovies);
+        loadMoreContainer.classList.remove('hidden');
+      } catch (err) {
+        console.error('Error filtering:', err);
+      }
+    }
+
+    async function searchMovies(query) {
+      currentPage = 1;
+      currentFilterType = 'search';
+      currentQuery = query;
+      sectionTitle.textContent = `Pencarian: "${query}"`;
+      showLoading();
+      document.getElementById('heroBanner').classList.add('hidden');
+
+      try {
+        const res = await fetch(`${BASE_URL}/search/${mediaType}?api_key=${API_KEY}&language=id-ID&query=${encodeURIComponent(query)}&page=1`);
+        const data = await res.json();
+        currentMovies = data.results || [];
+        renderMovies(currentMovies);
+        loadMoreContainer.classList.remove('hidden');
+      } catch (err) {
+        console.error('Error searching:', err);
+      }
+    }
+
+    async function loadMore() {
+      currentPage++;
+      let url = '';
+
+      if (currentFilterType === 'trending') {
+        url = `${BASE_URL}/trending/${mediaType}/week?api_key=${API_KEY}&language=id-ID&page=${currentPage}`;
+      } else if (currentFilterType === 'category') {
+        url = `${BASE_URL}/${mediaType}/${currentQuery}?api_key=${API_KEY}&language=id-ID&page=${currentPage}`;
+      } else if (currentFilterType === 'search') {
+        url = `${BASE_URL}/search/${mediaType}?api_key=${API_KEY}&language=id-ID&query=${encodeURIComponent(currentQuery)}&page=${currentPage}`;
+      } else if (currentFilterType === 'discover') {
+        const selectedGenre = genreSelect.value;
+        const selectedYear = yearSelect.value;
+        const selectedSort = sortSelect.value;
+        url = `${BASE_URL}/discover/${mediaType}?api_key=${API_KEY}&language=id-ID&sort_by=${selectedSort}&page=${currentPage}`;
+        if (selectedGenre) url += `&with_genres=${selectedGenre}`;
+        if (selectedYear) url += mediaType === 'movie' ? `&primary_release_year=${selectedYear}` : `&first_air_date_year=${selectedYear}`;
+      }
+
+      if (!url) return;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        const newMovies = data.results || [];
+        currentMovies = [...currentMovies, ...newMovies];
+        appendMovies(newMovies);
+      } catch (err) {
+        console.error('Error loading more:', err);
+      }
+    }
+
+    function startHeroCarousel() {
+      if (heroInterval) clearInterval(heroInterval);
+      if (heroCarouselList.length === 0) return;
+
+      heroCurrentIndex = 0;
+      updateHeroDisplay(heroCarouselList[heroCurrentIndex]);
+      renderHeroIndicators();
+
+      heroInterval = setInterval(() => {
+        heroCurrentIndex = (heroCurrentIndex + 1) % heroCarouselList.length;
+        updateHeroDisplay(heroCarouselList[heroCurrentIndex]);
+        updateHeroIndicators();
+      }, 5000);
+    }
+
+    function updateHeroDisplay(movie) {
+      const heroBanner = document.getElementById('heroBanner');
+      const heroContent = document.getElementById('heroContent');
+      if (!movie || !movie.backdrop_path) return;
+
+      heroContent.style.opacity = '0';
+
+      setTimeout(() => {
+        heroBanner.style.backgroundImage = `url(${HERO_IMAGE_URL}${movie.backdrop_path})`;
+        document.getElementById('heroTitle').textContent = movie.title || movie.name;
+        document.getElementById('heroOverview').textContent = movie.overview || 'Saksikan konten trending populer minggu ini langsung di Netplix.';
+        
+        document.getElementById('heroPlayBtn').onclick = () => openModal(movie.id);
+        document.getElementById('heroAddBtn').onclick = () => toggleMyList(movie);
+        
+        heroContent.style.opacity = '1';
+      }, 300);
+
+      heroBanner.classList.remove('hidden');
+    }
+
+    function renderHeroIndicators() {
+      const container = document.getElementById('heroIndicators');
+      container.innerHTML = '';
+      heroCarouselList.forEach((_, idx) => {
+        const dot = document.createElement('div');
+        dot.className = `h-1 rounded-full transition-all duration-300 ${idx === heroCurrentIndex ? 'w-5 bg-[#E50914]' : 'w-1.5 bg-white/30'}`;
+        container.appendChild(dot);
+      });
+    }
+
+    function updateHeroIndicators() {
+      const dots = document.getElementById('heroIndicators').children;
+      Array.from(dots).forEach((dot, idx) => {
+        if (idx === heroCurrentIndex) {
+          dot.className = 'h-1 w-5 bg-[#E50914] rounded-full transition-all duration-300';
+        } else {
+          dot.className = 'h-1 w-1.5 bg-white/30 rounded-full transition-all duration-300';
+        }
+      });
+    }
+
+    function renderMovies(movies) {
+      movieGrid.innerHTML = '';
+      if (!movies || movies.length === 0) {
+        movieGrid.innerHTML = `<p class="col-span-full text-center text-gray-500 py-12">Konten tidak ditemukan.</p>`;
+        loadMoreContainer.classList.add('hidden');
+        return;
+      }
+      appendMovies(movies);
+    }
+
+    function appendMovies(movies) {
+      movies.forEach(movie => {
+        const title = movie.title || movie.name;
+        const posterPath = movie.poster_path 
+          ? `${IMAGE_BASE_URL}${movie.poster_path}` 
+          : 'https://via.placeholder.com/500x750?text=No+Cover';
+        
+        const releaseYear = (movie.release_date || movie.first_air_date || '').split('-')[0] || 'N/A';
+        const rating = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
+
+        const card = document.createElement('div');
+        card.className = 'group relative rounded-md overflow-hidden bg-[#111] cursor-pointer transition duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-900/30 border border-neutral-800/60 hover:border-red-600/50';
+        card.onclick = () => openModal(movie.id);
+
+        card.innerHTML = `
+          <div class="aspect-[2/3] w-full bg-neutral-900 relative overflow-hidden">
+            <img src="${posterPath}" alt="${title}" class="w-full h-full object-cover group-hover:opacity-90 transition duration-300" loading="lazy">
+            <div class="absolute top-2 right-2 bg-black/80 backdrop-blur-md text-yellow-400 text-[10px] px-1.5 py-0.5 rounded font-bold flex items-center space-x-1 border border-white/10">
+              <i class="fa-solid fa-star text-[9px]"></i><span>${rating}</span>
+            </div>
+          </div>
+          <div class="p-2.5">
+            <h3 class="font-bold text-xs md:text-sm truncate text-gray-100 group-hover:text-[#E50914] transition">${title}</h3>
+            <p class="text-[11px] text-gray-500 mt-0.5">${releaseYear}</p>
+          </div>
+        `;
+        movieGrid.appendChild(card);
+      });
+    }
+
+    function resetFilters() {
+      loadInitialData();
+    }
+
+    async function openModal(id) {
+      movieModal.classList.remove('hidden');
+      const videoContainer = document.getElementById('modalVideoContainer');
+      videoContainer.innerHTML = `<div class="flex items-center justify-center h-full text-gray-400 text-xs">Memuat trailer & detail...</div>`;
+
+      try {
+        const itemRes = await fetch(`${BASE_URL}/${mediaType}/${id}?api_key=${API_KEY}&language=id-ID`);
+        const item = await itemRes.json();
+
+        addToHistory(item);
+
+        const videoRes = await fetch(`${BASE_URL}/${mediaType}/${id}/videos?api_key=${API_KEY}`);
+        const videoData = await videoRes.json();
+        const trailer = videoData.results.find(v => v.type === 'Trailer' && v.site === 'YouTube') || videoData.results[0];
+
+        if (trailer) {
+          videoContainer.innerHTML = `
+            <iframe class="w-full h-full" src="https://www.youtube.com/embed/${trailer.key}?autoplay=1" title="Trailer" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          `;
+        } else {
+          videoContainer.innerHTML = `<div class="flex items-center justify-center h-full text-gray-500 text-xs">Trailer tidak tersedia</div>`;
+        }
+
+        const title = item.title || item.name;
+        const releaseDate = item.release_date || item.first_air_date || '';
+
+        document.getElementById('modalTitle').textContent = title;
+        document.getElementById('modalRating').textContent = `★ ${item.vote_average ? item.vote_average.toFixed(1) : 'N/A'}`;
+        document.getElementById('modalMeta').textContent = `${releaseDate ? releaseDate.split('-')[0] : ''} • ${item.runtime || item.episode_run_time?.[0] || '?'} min • ${item.genres ? item.genres.map(g => g.name).join(', ') : ''}`;
+        document.getElementById('modalOverview').textContent = item.overview || 'Belum ada deskripsi cerita.';
+
+        const modalAddBtn = document.getElementById('modalAddBtn');
+        const modalAddText = document.getElementById('modalAddText');
+        const isSaved = myList.some(s => s.id === item.id);
+        modalAddText.textContent = isSaved ? 'Hapus dari Daftar Saya' : 'Tambah ke Daftar Saya';
+        
+        modalAddBtn.onclick = () => {
+          toggleMyList(item);
+          const updatedSaved = myList.some(s => s.id === item.id);
+          modalAddText.textContent = updatedSaved ? 'Hapus dari Daftar Saya' : 'Tambah ke Daftar Saya';
+        };
+
+        fetchCast(id);
+        fetchSimilar(id);
+
+      } catch (err) {
+        console.error('Gagal memuat detail:', err);
+      }
+    }
+
+    async function fetchCast(id) {
+      const castGrid = document.getElementById('modalCastGrid');
+      castGrid.innerHTML = `<p class="text-xs text-gray-500">Memuat pemeran...</p>`;
+
+      try {
+        const res = await fetch(`${BASE_URL}/${mediaType}/${id}/credits?api_key=${API_KEY}&language=id-ID`);
+        const data = await res.json();
+        const cast = (data.cast || []).slice(0, 6);
+
+        if (cast.length === 0) {
+          castGrid.innerHTML = `<p class="text-xs text-gray-500">Informasi pemeran tidak tersedia</p>`;
+          return;
+        }
+
+        castGrid.innerHTML = cast.map(actor => {
+          const profile = actor.profile_path ? `${IMAGE_BASE_URL}${actor.profile_path}` : 'https://via.placeholder.com/100x100?text=No+Img';
+          return `
+            <div class="flex-shrink-0 w-20 text-center">
+              <img src="${profile}" alt="${actor.name}" class="w-16 h-16 object-cover rounded-full mx-auto border border-neutral-700 shadow-md mb-1">
+              <p class="text-[11px] font-bold text-gray-200 truncate">${actor.name}</p>
+              <p class="text-[9px] text-gray-500 truncate">${actor.character || ''}</p>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        castGrid.innerHTML = `<p class="text-xs text-gray-500">Gagal memuat pemeran</p>`;
+      }
+    }
+
+    async function fetchSimilar(id) {
+      const similarGrid = document.getElementById('modalSimilarGrid');
+      document.getElementById('similarTitle').textContent = mediaType === 'movie' ? 'Film Serupa' : 'Serial TV Serupa';
+      similarGrid.innerHTML = `<p class="col-span-full text-xs text-gray-500">Memuat rekomendasi...</p>`;
+
+      try {
+        const res = await fetch(`${BASE_URL}/${mediaType}/${id}/similar?api_key=${API_KEY}&language=id-ID`);
+        const data = await res.json();
+        const similar = (data.results || []).slice(0, 6);
+
+        if (similar.length === 0) {
+          similarGrid.innerHTML = `<p class="col-span-full text-xs text-gray-500">Tidak ada rekomendasi serupa</p>`;
+          return;
+        }
+
+        similarGrid.innerHTML = similar.map(s => {
+          const poster = s.poster_path ? `${IMAGE_BASE_URL}${s.poster_path}` : 'https://via.placeholder.com/150x225?text=No+Cover';
+          return `
+            <div onclick="openModal(${s.id})" class="cursor-pointer rounded overflow-hidden bg-neutral-900 border border-neutral-800 hover:border-red-600 transition">
+              <img src="${poster}" alt="${s.title || s.name}" class="w-full aspect-[2/3] object-cover">
+              <p class="text-[10px] font-bold truncate p-1 text-gray-300">${s.title || s.name}</p>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        similarGrid.innerHTML = `<p class="col-span-full text-xs text-gray-500">Gagal memuat rekomendasi</p>`;
+      }
+    }
+
+    function closeModal() {
+      movieModal.classList.add('hidden');
+      document.getElementById('modalVideoContainer').innerHTML = '';
+    }
+
+    function toggleMyList(item) {
+      const index = myList.findIndex(s => s.id === item.id);
+      const title = item.title || item.name;
+      if (index > -1) {
+        myList.splice(index, 1);
+        alert(`"${title}" dihapus dari Daftar Saya.`);
+      } else {
+        myList.push({
+          id: item.id,
+          title: title,
+          poster_path: item.poster_path,
+          release_date: item.release_date || item.first_air_date,
+          vote_average: item.vote_average
+        });
+        alert(`"${title}" ditambahkan ke Daftar Saya.`);
+      }
+      localStorage.setItem('netplix_mylist', JSON.stringify(myList));
+      updateMyListBadge();
+    }
+
+    function addToHistory(item) {
+      const index = watchHistory.findIndex(h => h.id === item.id);
+      if (index > -1) watchHistory.splice(index, 1);
+      
+      watchHistory.unshift({
+        id: item.id,
+        title: item.title || item.name,
+        poster_path: item.poster_path,
+        release_date: item.release_date || item.first_air_date,
+        vote_average: item.vote_average
+      });
+
+      if (watchHistory.length > 18) watchHistory.pop();
+      localStorage.setItem('netplix_history', JSON.stringify(watchHistory));
+    }
+
+    function filterMyList() {
+      sectionTitle.textContent = 'Daftar Saya';
+      document.getElementById('heroBanner').classList.add('hidden');
+      loadMoreContainer.classList.add('hidden');
+      renderMovies(myList);
+    }
+
+    function showHistory() {
+      sectionTitle.textContent = 'Terakhir Dilihat';
+      document.getElementById('heroBanner').classList.add('hidden');
+      loadMoreContainer.classList.add('hidden');
+      renderMovies(watchHistory);
+    }
+
+    function showLoading() {
+      movieGrid.innerHTML = Array(6).fill(0).map(() => `
+        <div class="animate-pulse bg-neutral-900 rounded-md aspect-[2/3]"></div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
+
